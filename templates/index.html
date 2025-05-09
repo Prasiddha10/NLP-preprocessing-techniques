@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP Processing Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            color: black;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .entity {
+            display: inline-block;
+            padding: 2px 5px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NLP Processing Tool</h1>
+        
+        <textarea id="inputText" placeholder="Enter text to analyze..."></textarea>
+        
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'all')">All Features</button>
+            <button class="tablinks" onclick="openTab(event, 'tokens')">Tokenization</button>
+            <button class="tablinks" onclick="openTab(event, 'lemmas')">Lemmatization</button>
+            <button class="tablinks" onclick="openTab(event, 'stems')">Stemming</button>
+            <button class="tablinks" onclick="openTab(event, 'pos')">POS Tagging</button>
+            <button class="tablinks" onclick="openTab(event, 'ner')">NER</button>
+            <button class="tablinks" onclick="openTab(event, 'comparison')">Stem vs Lemma</button>
+        </div>
+        
+        <button onclick="processText()">Process Text</button>
+        
+        <div id="all" class="tabcontent" style="display: block;">
+            <h3>All NLP Features</h3>
+            <div id="allResults" class="results"></div>
+        </div>
+        
+        <div id="tokens" class="tabcontent">
+            <h3>Tokenization Results</h3>
+            <div id="tokenResults" class="results"></div>
+        </div>
+        
+        <div id="lemmas" class="tabcontent">
+            <h3>Lemmatization Results</h3>
+            <div id="lemmaResults" class="results"></div>
+        </div>
+        
+        <div id="stems" class="tabcontent">
+            <h3>Stemming Results</h3>
+            <div id="stemResults" class="results"></div>
+        </div>
+        
+        <div id="pos" class="tabcontent">
+            <h3>POS Tagging Results</h3>
+            <div id="posResults" class="results"></div>
+        </div>
+        
+        <div id="ner" class="tabcontent">
+            <h3>Named Entity Recognition</h3>
+            <div id="nerResults" class="results"></div>
+        </div>
+        
+        <div id="comparison" class="tabcontent">
+            <h3>Stemming vs. Lemmatization</h3>
+            <div class="results">
+                <table>
+                    <tr>
+                        <th>Word</th>
+                        <th>Stem (Porter)</th>
+                        <th>Lemma (WordNet)</th>
+                        <th>Difference</th>
+                    </tr>
+                    <tr><td>running</td><td>run</td><td>run</td><td>Same</td></tr>
+                    <tr><td>better</td><td>better</td><td>good</td><td>Lemma normalizes to root adjective</td></tr>
+                    <tr><td>wolves</td><td>wolv</td><td>wolf</td><td>Stem incomplete, lemma correct</td></tr>
+                    <tr><td>ate</td><td>ate</td><td>eat</td><td>Lemma shows base verb</td></tr>
+                    <tr><td>meeting</td><td>meet</td><td>meeting</td><td>Stem loses noun meaning</td></tr>
+                    <tr><td>fairly</td><td>fairli</td><td>fairly</td><td>Stem creates non-word</td></tr>
+                    <tr><td>happily</td><td>happili</td><td>happily</td><td>Stem creates non-word</td></tr>
+                    <tr><td>dogs</td><td>dog</td><td>dog</td><td>Same</td></tr>
+                    <tr><td>swimming</td><td>swim</td><td>swimming</td><td>Stem loses gerund form</td></tr>
+                    <tr><td>feet</td><td>feet</td><td>foot</td><td>Lemma shows singular</td></tr>
+                </table>
+                <h4>Key Differences:</h4>
+                <ul>
+                    <li><strong>Stemming</strong> chops words aggressively (may create non-words)</li>
+                    <li><strong>Lemmatization</strong> uses vocabulary to return dictionary forms</li>
+                    <li>Lemmas maintain meaning (e.g., "better" → "good")</li>
+                    <li>Stems are faster to compute but less accurate</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function processText() {
+            const text = document.getElementById('inputText').value.trim();
+            if (!text) {
+                alert('Please enter some text to analyze');
+                return;
+            }
+
+            fetch('/api/process_all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayAllResults(data);
+                displayTokenResults({
+                    nltk_tokens: data.tokens,
+                    spacy_tokens: data.tokens
+                });
+                displayLemmaResults({
+                    nltk_lemmas: data.lemmas,
+                    spacy_lemmas: data.lemmas
+                });
+                displayStemResults({
+                    stems: data.stems
+                });
+                displayPosResults({
+                    nltk_pos_tags: data.pos_tags,
+                    spacy_pos_tags: data.pos_tags
+                });
+                displayNerResults({
+                    entities: data.entities
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error processing text');
+            });
+        }
+
+        function displayAllResults(data) {
+            const container = document.getElementById('allResults');
+            let html = `<h4>Tokens</h4><p>${data.tokens.join(', ')}</p>`;
+            html += `<h4>Lemmas</h4><p>${data.lemmas.join(', ')}</p>`;
+            html += `<h4>Stems</h4><p>${data.stems.join(', ')}</p>`;
+            html += `<h4>POS Tags</h4><pre>${JSON.stringify(data.pos_tags, null, 2)}</pre>`;
+            
+            const text = document.getElementById('inputText').value;
+            let markedText = text;
+            const sortedEntities = [...data.entities].sort((a, b) => b.start - a.start);
+            
+            for (const entity of sortedEntities) {
+                const before = markedText.substring(0, entity.start);
+                const after = markedText.substring(entity.end);
+                const entityText = markedText.substring(entity.start, entity.end);
+                markedText = `${before}<span class="entity" style="background-color: ${getColorForLabel(entity.label)}">${entityText} (${entity.label})</span>${after}`;
+            }
+            
+            html += `<h4>Named Entities</h4><div>${markedText}</div>`;
+            html += `<pre>${JSON.stringify(data.entities, null, 2)}</pre>`;
+            
+            container.innerHTML = html;
+        }
+
+        function displayTokenResults(data) {
+            const container = document.getElementById('tokenResults');
+            container.innerHTML = `
+                <h4>NLTK Tokens</h4>
+                <p>${data.nltk_tokens.join(', ')}</p>
+                <h4>spaCy Tokens</h4>
+                <p>${data.spacy_tokens.join(', ')}</p>
+            `;
+        }
+
+        function displayLemmaResults(data) {
+            const container = document.getElementById('lemmaResults');
+            container.innerHTML = `
+                <h4>NLTK Lemmas</h4>
+                <p>${data.nltk_lemmas.join(', ')}</p>
+                <h4>spaCy Lemmas</h4>
+                <p>${data.spacy_lemmas.join(', ')}</p>
+            `;
+        }
+
+        function displayStemResults(data) {
+            const container = document.getElementById('stemResults');
+            container.innerHTML = `
+                <p>${data.stems.join(', ')}</p>
+            `;
+        }
+
+        function displayPosResults(data) {
+            const container = document.getElementById('posResults');
+            container.innerHTML = `
+                <h4>NLTK POS Tags</h4>
+                <pre>${JSON.stringify(data.nltk_pos_tags, null, 2)}</pre>
+                <h4>spaCy POS Tags</h4>
+                <pre>${JSON.stringify(data.spacy_pos_tags, null, 2)}</pre>
+            `;
+        }
+
+        function displayNerResults(data) {
+            const container = document.getElementById('nerResults');
+            const text = document.getElementById('inputText').value;
+            let markedText = text;
+            
+            const sortedEntities = [...data.entities].sort((a, b) => b.start - a.start);
+            
+            for (const entity of sortedEntities) {
+                const before = markedText.substring(0, entity.start);
+                const after = markedText.substring(entity.end);
+                const entityText = markedText.substring(entity.start, entity.end);
+                markedText = `${before}<span class="entity" style="background-color: ${getColorForLabel(entity.label)}">${entityText} (${entity.label})</span>${after}`;
+            }
+            
+            container.innerHTML = `
+                <div>${markedText}</div>
+                <pre>${JSON.stringify(data.entities, null, 2)}</pre>
+            `;
+        }
+
+        function getColorForLabel(label) {
+            const colors = {
+                'PERSON': '#ff9999',
+                'ORG': '#99ff99',
+                'GPE': '#9999ff',
+                'LOC': '#ffff99',
+                'DATE': '#ff99ff',
+                'TIME': '#99ffff',
+                'MONEY': '#ffcc99',
+                'PERCENT': '#ccff99',
+                'PRODUCT': '#99ccff'
+            };
+            return colors[label] || '#cccccc';
+        }
+    </script>
+</body>
+</html>
