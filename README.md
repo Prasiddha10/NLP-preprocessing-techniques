@@ -1,6 +1,6 @@
-NLP Preprocessing Demo
-This project demonstrates core NLP preprocessing techniques, including tokenization, lemmatization, stemming, POS tagging, and Named Entity Recognition (NER) using NLTK and spaCy libraries.
-Features
+# NLP Preprocessing Demo
+This project demonstrates core NLP preprocessing techniques, including tokenization, lemmatization, stemming, POS tagging, and Named Entity Recognition (NER) utilizing the NLTK and spaCy libraries.
+# Features
 
 Tokenization using both NLTK and spaCy
 Lemmatization for converting words to their base forms
